@@ -1,0 +1,188 @@
+@import "tailwindcss";
+
+/*
+ * Quote Builder design system tokens (from tokens.json).
+ * Light only. Spacing uses Tailwind's 4px scale, which matches space-1 … space-12.
+ */
+@theme {
+  --color-*: initial;
+  --color-canvas: #f3f4f1;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #f7f8f5;
+  --color-line: #e4e6e1;
+  --color-line-strong: #cfd3cb;
+  --color-control-border: #878d86;
+  --color-ink: #161816;
+  --color-ink-muted: #5f655f;
+  --color-ink-faint: #878d86;
+  --color-accent: #1f6b4a;
+  --color-accent-hover: #18563b;
+  --color-accent-soft: #e7f1ec;
+  --color-on-accent: #ffffff;
+  --color-info: #2856a6;
+  --color-info-soft: #e8eefa;
+  --color-warning: #8a5a00;
+  --color-warning-soft: #fbf1dc;
+  --color-danger: #b42318;
+  --color-danger-soft: #fbeceb;
+  --color-focus: #1f6b4a;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  --font-sans: "Geist Variable", "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-full: 999px;
+
+  --shadow-paper: 0 1px 2px rgba(22, 24, 22, 0.05), 0 12px 32px rgba(22, 24, 22, 0.08);
+  --shadow-pop: 0 8px 24px rgba(22, 24, 22, 0.12);
+
+  --spacing-control-h: 32px;
+  --spacing-row-h: 44px;
+  --spacing-sidebar-w: 224px;
+}
+
+@layer base {
+  html,
+  body {
+    height: 100%;
+  }
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 20px;
+    color: var(--color-ink);
+    background: var(--color-canvas);
+    -webkit-font-smoothing: antialiased;
+  }
+  #root {
+    height: 100%;
+  }
+  @media screen {
+    html,
+    body {
+      overflow: hidden;
+    }
+  }
+  button {
+    cursor: pointer;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: none;
+  }
+  ::selection {
+    background: var(--color-accent-soft);
+  }
+}
+
+@utility tnum {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Numbered lists on the document use CSS counters, as in the design system. */
+.doc-steps {
+  counter-reset: s;
+}
+.doc-steps > li {
+  counter-increment: s;
+}
+.doc-steps > li::before {
+  content: counter(s);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-ink-faint);
+  grid-row: span 2;
+}
+.doc-terms {
+  counter-reset: t;
+}
+.doc-terms > li {
+  counter-increment: t;
+}
+.doc-terms > li::before {
+  content: counter(t);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-ink-faint);
+}
+
+/* ---------- Window chrome: no title bar, so the canvas is the window's drag handle ---------- */
+/*
+ * Electrobun reads app-region: the canvas around the cards (and the sidebar's
+ * empty space, where the traffic lights sit) moves the window. Content cards,
+ * controls and pop-ups don't, so clicking and selecting text work as usual.
+ */
+.app-shell {
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+.app-shell :is(main, aside, button, a, input, select, textarea, label, [role="menu"], [role="dialog"], [role="listbox"], [contenteditable]) {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+/* ---------- Print: only the document, A4, real vector text ---------- */
+.print-root {
+  display: none;
+}
+
+/* The page margin replaces the sheet's 48px padding, so every printed page gets it. */
+/*
+ * No page margin: the browser prints its own header and footer (date, title,
+ * URL, page numbers) inside the margin, so with none there is nowhere to put
+ * them. The sheet supplies the white space instead, repeated on every page.
+ */
+@page {
+  size: A4;
+  margin: 0;
+}
+
+@media print {
+  html,
+  body,
+  #root {
+    height: auto;
+    background: #fff;
+  }
+  .app-shell {
+    display: none !important;
+  }
+  .print-root {
+    display: block;
+  }
+  .print-root .doc-sheet {
+    box-shadow: none !important;
+    width: auto !important;
+    min-height: 0 !important;
+    padding: 12.7mm !important;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+  .doc-avoid-break {
+    break-inside: avoid;
+  }
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
