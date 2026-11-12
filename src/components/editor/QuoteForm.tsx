@@ -6,9 +6,10 @@ import { counts, moduleEstimate, modulePrice, quoteSummary } from "@/lib/estimat
 import { scheduleBase, scheduleTotal } from "@/lib/totals";
 import type { Module, ModuleKind, QuoteDoc, Step } from "@/lib/types";
 import { Button } from "../ui/Button";
-import { AreaField, Field, NumberField } from "../ui/Field";
+import { AreaField, Field, MiniNumber, NumberField } from "../ui/Field";
+import { MetaField, MetaRow } from "../ui/Property";
 import { InlineArea, InlineInput, Money, Panel, SectionHead, Segmented } from "../ui/misc";
-import { HowToQuote, ModuleEstimateTotal, PricingPanel, StepEstimate, SummaryTiles } from "./estimate";
+import { HowToQuote, ModuleEstimateTotal, PricingPanel, StepColumnsHead, StepEstimate, SummaryTiles } from "./estimate";
 import { ClientPanel, FromPanel, NotesPanel, CurrencyPanel, RowActions, TaxPanel, TermsEditor, TitleInput, TotalsCard } from "./shared";
 
 export function QuoteForm({ doc, onChange }: { doc: QuoteDoc; onChange: (d: QuoteDoc) => void }) {
@@ -29,11 +30,11 @@ export function QuoteForm({ doc, onChange }: { doc: QuoteDoc; onChange: (d: Quot
     <>
       <TitleInput value={doc.title} onChange={(title) => patch({ title })} placeholder="Quote title, like “Website redesign”" />
 
-      <div className="grid grid-cols-2 gap-4 @xl:grid-cols-3">
-        <Field label="Quote number" mono value={doc.number} onChange={(e) => patch({ number: e.target.value })} />
-        <Field label="Date" type="date" value={doc.date} onChange={(e) => patch({ date: e.target.value })} />
-        <Field label="Valid until" type="date" value={doc.validUntil} onChange={(e) => patch({ validUntil: e.target.value })} />
-      </div>
+      <MetaRow>
+        <MetaField icon="hash" aria-label="Quote number" mono value={doc.number} onChange={(number) => patch({ number })} />
+        <MetaField icon="calendar" label="Issued" type="date" value={doc.date} onChange={(date) => patch({ date })} />
+        <MetaField label="Valid until" type="date" value={doc.validUntil} onChange={(validUntil) => patch({ validUntil })} />
+      </MetaRow>
 
       <ClientPanel client={doc.client} onChange={(client) => patch({ client })} title="Prepared for" />
 
@@ -100,7 +101,7 @@ export function QuoteForm({ doc, onChange }: { doc: QuoteDoc; onChange: (d: Quot
             <ol className="m-0 list-none p-0">
               {doc.schedule.map((s, i) => (
                 <li key={s.id} className="group grid grid-cols-[76px_minmax(0,1fr)_auto] items-center gap-2 border-t border-line px-4 py-2 first:border-t-0">
-                  <NumberField aria-label="Percent" suffix="%" value={s.pct} min={0} onValue={(pct) => patch({ schedule: patchById(doc.schedule, s.id, { pct }) })} />
+                  <MiniNumber label="Percent" hideLabel="sr-only" suffix="%" value={s.pct} onValue={(pct) => patch({ schedule: patchById(doc.schedule, s.id, { pct: pct ?? 0 }) })} />
                   <div className="grid min-w-0 gap-0.5">
                     <InlineInput
                       aria-label="When"
@@ -236,12 +237,24 @@ function ModuleCard({
         </div>
       </header>
 
+      {/* Column captions, once per module, lined up with the step cells below */}
+      {estimated && m.steps.length > 0 && (
+        <div className="hidden grid-cols-[22px_minmax(0,1fr)_auto] gap-3 border-t border-line px-4 pb-1.5 pt-2 @3xl:grid">
+          <span />
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4">
+            <span className="text-[11px] leading-[14px] text-ink-muted">Step</span>
+            <StepColumnsHead />
+          </div>
+          <span className="w-[82px]" />
+        </div>
+      )}
+
       <ol className="m-0 list-none p-0">
         {m.steps.map((s, i) => (
-          <li key={s.id} className="group grid min-h-row-h grid-cols-[22px_minmax(0,1fr)_auto] items-start gap-3 border-t border-line px-4 py-2.5 hover:bg-surface-sunken">
-            <span className={cx("tnum pt-0.5 text-right text-xs leading-5 text-ink-faint", estimated && i === 0 && "@3xl:pt-[19px]")}>{i + 1}</span>
+          <li key={s.id} className="group grid min-h-row-h grid-cols-[22px_minmax(0,1fr)_auto] items-start gap-3 border-t border-line px-4 py-2">
+            <span className="tnum pt-1 text-right text-xs leading-5 text-ink-faint">{i + 1}</span>
             <div className={cx("grid min-w-0 gap-2", estimated && "@3xl:grid-cols-[minmax(0,1fr)_auto] @3xl:gap-4")}>
-              <div className={cx("grid min-w-0 gap-0.5", estimated && i === 0 && "@3xl:pt-[18px]")}>
+              <div className="grid min-w-0 gap-0.5">
                 <InlineInput
                   aria-label={`Step ${i + 1} name`}
                   value={s.name}
@@ -266,9 +279,9 @@ function ModuleCard({
                   className="text-[13px] leading-[18px] text-ink-muted"
                 />
               </div>
-              {estimated && <StepEstimate step={s} module={m} q={q} first={i === 0} onChange={(p) => setStep(s.id, p)} />}
+              {estimated && <StepEstimate step={s} module={m} q={q} onChange={(p) => setStep(s.id, p)} />}
             </div>
-            <span className={cx(estimated && i === 0 && "@3xl:pt-[18px]")}>
+            <span className="w-[82px]">
               <RowActions
                 name={s.name || `step ${i + 1}`}
                 first={i === 0}

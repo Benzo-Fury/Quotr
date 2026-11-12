@@ -68,7 +68,7 @@ export function Money({
 /* ---------- Inline inputs: borderless until hovered, for titles and names in cards ---------- */
 
 const inlineBase =
-  "w-full min-w-0 rounded-sm border border-transparent bg-transparent px-2 -mx-2 text-ink outline-none placeholder:text-ink-faint hover:border-line focus:border-accent focus:shadow-[0_0_0_1px_var(--color-accent)]";
+  "w-full min-w-0 rounded-sm border border-transparent bg-transparent px-2 -mx-2 text-ink outline-none placeholder:text-ink-faint hover:border-line focus:border-accent focus:shadow-[0_0_0_3px_var(--color-accent-soft)]";
 
 export function InlineInput({ className, ...rest }: React.InputHTMLAttributes<HTMLInputElement>) {
   return <input type="text" {...rest} className={cx(inlineBase, "py-0.5", className)} />;
@@ -377,7 +377,7 @@ export function PasteDialog({
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder='{ "version": 1, "meta": { … }, "groups": [ … ], "items": [ … ] }'
-            className="tnum w-full resize-y rounded-sm border border-control-border bg-surface px-3 py-2 text-xs leading-[18px] outline-none placeholder:text-ink-faint hover:border-ink focus:border-accent focus:shadow-[0_0_0_1px_var(--color-accent)]"
+            className="tnum w-full resize-y rounded-sm border border-line bg-surface-sunken px-3 py-2 text-xs leading-[18px] outline-none placeholder:text-ink-faint hover:border-control-border focus:bg-surface focus:border-accent focus:shadow-[0_0_0_3px_var(--color-accent-soft)]"
           />
         </div>
         <div className="flex justify-end gap-2 border-t border-line px-6 py-3">

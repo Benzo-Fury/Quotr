@@ -132,6 +132,75 @@
   app-region: no-drag;
 }
 
+/* ---------- Island: the liquid notification pill (components/ui/Island.tsx) ---------- */
+/*
+ * Starts as a small ink dot, then springs open to the message's width with a
+ * slight overshoot; a new message re-springs the width and blurs its text in.
+ * Folding away runs the same spring back down to the dot.
+ */
+.island {
+  position: relative;
+  overflow: hidden;
+  border-radius: 999px;
+  color: var(--color-surface);
+  box-shadow: var(--shadow-pop);
+  opacity: 0;
+  transform: translateY(8px) scale(0.6);
+  filter: blur(4px);
+  transition:
+    width 560ms cubic-bezier(0.34, 1.45, 0.5, 1),
+    height 560ms cubic-bezier(0.34, 1.45, 0.5, 1),
+    background-color 300ms ease,
+    transform 480ms cubic-bezier(0.34, 1.45, 0.5, 1),
+    opacity 240ms ease,
+    filter 320ms ease;
+}
+.island-open {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+.island-content {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  animation: island-in 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.island-open .island-content {
+  animation-delay: 80ms;
+}
+@keyframes island-in {
+  from {
+    opacity: 0;
+    filter: blur(5px);
+    transform: translateX(-50%) translateY(6px) scale(0.96);
+  }
+}
+.island-spin {
+  animation: island-spin 800ms linear infinite;
+}
+@keyframes island-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.island-check {
+  stroke-dasharray: 22;
+  stroke-dashoffset: 22;
+  animation: island-draw 360ms 180ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+@keyframes island-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
 /* ---------- Print: only the document, A4, real vector text ---------- */
 .print-root {
   display: none;
@@ -184,5 +253,8 @@
   *::after {
     transition: none !important;
     animation: none !important;
+  }
+  .island-check {
+    stroke-dashoffset: 0;
   }
 }

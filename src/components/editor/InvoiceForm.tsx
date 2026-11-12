@@ -1,11 +1,12 @@
 import { newLine } from "@/lib/factory";
-import { currencySymbol, formatMoney } from "@/lib/format";
+import { formatMoney } from "@/lib/format";
 import { insertAfter, moveItem, patchById, removeById } from "@/lib/list";
 import { useStore } from "@/lib/store";
 import { docTotals, lineAmount } from "@/lib/totals";
 import type { InvoiceDoc } from "@/lib/types";
 import { Button } from "../ui/Button";
-import { Field, NumberField } from "../ui/Field";
+import { MiniNumber } from "../ui/Field";
+import { MetaField, MetaRow, Property, PropertyList } from "../ui/Property";
 import { InlineArea, InlineInput, Money, Panel } from "../ui/misc";
 import { ClientPanel, FromPanel, NotesPanel, CurrencyPanel, RowActions, TaxPanel, TermsEditor, TitleInput, TotalsCard } from "./shared";
 
@@ -13,30 +14,29 @@ export function InvoiceForm({ doc, onChange }: { doc: InvoiceDoc; onChange: (d: 
   const { ws } = useStore();
   const patch = (p: Partial<InvoiceDoc>) => onChange({ ...doc, ...p });
   const pay = doc.payment;
-  const setPay = (k: keyof InvoiceDoc["payment"]) => (e: { target: { value: string } }) => patch({ payment: { ...pay, [k]: e.target.value } });
-  const sym = currencySymbol(doc.currency);
+  const setPay = (k: keyof InvoiceDoc["payment"]) => (v: string) => patch({ payment: { ...pay, [k]: v } });
   const total = docTotals(doc).total;
 
   return (
     <>
       <TitleInput value={doc.title} onChange={(title) => patch({ title })} placeholder="Invoice title, like “Website redesign: deposit”" />
 
-      <div className="grid grid-cols-2 gap-4 @xl:grid-cols-4">
-        <Field
-          label="Invoice number"
+      <MetaRow>
+        <MetaField
+          icon="hash"
+          aria-label="Invoice number"
           mono
           value={doc.number}
-          onChange={(e) => {
-            const number = e.target.value;
+          onChange={(number) => {
             // Keep the payment reference following the number unless it was changed by hand.
             const ref = pay.reference === doc.number ? number : pay.reference;
             patch({ number, payment: { ...pay, reference: ref } });
           }}
         />
-        <Field label="Issued" type="date" value={doc.date} onChange={(e) => patch({ date: e.target.value })} />
-        <Field label="Due" type="date" value={doc.due} onChange={(e) => patch({ due: e.target.value })} />
-        <Field label="For quote" mono placeholder="Optional" value={doc.quoteRef} onChange={(e) => patch({ quoteRef: e.target.value })} />
-      </div>
+        <MetaField icon="calendar" label="Issued" type="date" value={doc.date} onChange={(date) => patch({ date })} />
+        <MetaField label="Due" type="date" value={doc.due} onChange={(due) => patch({ due })} />
+        <MetaField label="For quote" mono placeholder="Add" value={doc.quoteRef} onChange={(quoteRef) => patch({ quoteRef })} />
+      </MetaRow>
 
       <ClientPanel client={doc.client} onChange={(client) => patch({ client })} title="Billed to" />
 
@@ -50,8 +50,8 @@ export function InvoiceForm({ doc, onChange }: { doc: InvoiceDoc; onChange: (d: 
       >
         <div className="hidden grid-cols-[minmax(0,1fr)_64px_112px_96px_84px] gap-3 border-b border-line bg-surface-sunken px-4 py-2 text-xs font-medium text-ink-muted @xl:grid">
           <span>Description</span>
-          <span className="text-right">Qty</span>
-          <span className="text-right">Rate</span>
+          <span className="pr-2 text-right">Qty</span>
+          <span className="pr-2 text-right">Rate</span>
           <span className="text-right">Amount</span>
           <span />
         </div>
@@ -60,9 +60,9 @@ export function InvoiceForm({ doc, onChange }: { doc: InvoiceDoc; onChange: (d: 
           {doc.lines.map((l, i) => (
             <li
               key={l.id}
-              className="group grid min-h-row-h grid-cols-2 items-start gap-3 border-t border-line px-4 py-2.5 first:border-t-0 hover:bg-surface-sunken @xl:grid-cols-[minmax(0,1fr)_64px_112px_96px_84px]"
+              className="group grid min-h-row-h grid-cols-[72px_112px_minmax(0,1fr)_auto] items-start gap-3 border-t border-line px-4 py-2 first:border-t-0 @xl:grid-cols-[minmax(0,1fr)_64px_112px_96px_84px]"
             >
-              <div className="col-span-2 grid min-w-0 gap-0.5 @xl:col-span-1">
+              <div className="col-span-4 grid min-w-0 gap-0.5 @xl:col-span-1">
                 <InlineInput
                   aria-label={`Item ${i + 1} description`}
                   value={l.name}
@@ -87,9 +87,9 @@ export function InvoiceForm({ doc, onChange }: { doc: InvoiceDoc; onChange: (d: 
                   className="text-[13px] leading-[18px] text-ink-muted"
                 />
               </div>
-              <NumberField aria-label="Quantity" value={l.qty} onValue={(qty) => patch({ lines: patchById(doc.lines, l.id, { qty }) })} />
-              <NumberField aria-label="Rate" prefix={sym} value={l.rate} onValue={(rate) => patch({ lines: patchById(doc.lines, l.id, { rate }) })} />
-              <Money amount={lineAmount(l)} currency={doc.currency} className="pt-1.5 text-right @xl:block" />
+              <MiniNumber label="Qty" hideLabel="@xl:sr-only" value={l.qty} onValue={(qty) => patch({ lines: patchById(doc.lines, l.id, { qty: qty ?? 0 }) })} />
+              <MiniNumber label="Rate" hideLabel="@xl:sr-only" value={l.rate} onValue={(rate) => patch({ lines: patchById(doc.lines, l.id, { rate: rate ?? 0 }) })} />
+              <Money amount={lineAmount(l)} currency={doc.currency} className="self-end pb-1 text-right text-[13px] @xl:self-start @xl:pb-0 @xl:pt-1" />
               <span className="flex justify-end pt-0.5">
                 <RowActions
                   name={l.name || `item ${i + 1}`}
@@ -117,13 +117,13 @@ export function InvoiceForm({ doc, onChange }: { doc: InvoiceDoc; onChange: (d: 
             </Button>
           }
         >
-          <div className="grid grid-cols-2 gap-4 p-4">
-            <Field label="Account name" value={pay.accountName} onChange={setPay("accountName")} className="col-span-2" />
-            <Field label="BSB" mono value={pay.bsb} onChange={setPay("bsb")} />
-            <Field label="Account number" mono value={pay.accountNumber} onChange={setPay("accountNumber")} />
-            <Field label="PayID" hint="Optional." value={pay.payId} onChange={setPay("payId")} />
-            <Field label="Reference" mono value={pay.reference} onChange={setPay("reference")} />
-          </div>
+          <PropertyList>
+            <Property icon="user" label="Account name" value={pay.accountName} placeholder="Add account name" onChange={setPay("accountName")} />
+            <Property icon="bank" label="BSB" mono value={pay.bsb} placeholder="Add BSB" onChange={setPay("bsb")} />
+            <Property icon="hash" label="Account" mono value={pay.accountNumber} placeholder="Add account number" onChange={setPay("accountNumber")} />
+            <Property icon="send" label="PayID" value={pay.payId} placeholder="Optional" onChange={setPay("payId")} />
+            <Property icon="receipt" label="Reference" mono value={pay.reference} placeholder="Add reference" onChange={setPay("reference")} />
+          </PropertyList>
         </Panel>
         <div className="grid gap-4">
           <TotalsCard doc={doc} totalLabel="Amount due" rows={doc.lines.map((l) => ({ label: l.name || "Untitled item", amount: lineAmount(l) }))} />

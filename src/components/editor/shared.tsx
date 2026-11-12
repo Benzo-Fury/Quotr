@@ -9,7 +9,9 @@ import { docTotals, gstNote } from "@/lib/totals";
 import type { Doc, Party } from "@/lib/types";
 import { Button } from "../ui/Button";
 import { AreaField, Field, NumberField, SelectField } from "../ui/Field";
-import { InlineArea, InlineInput, Money, Panel, SectionHead, Switch } from "../ui/misc";
+import { Icon } from "../ui/Icon";
+import { InlineArea, Money, Panel, SectionHead, Switch } from "../ui/misc";
+import { Property, PropertyList } from "../ui/Property";
 
 /* ---------- title ---------- */
 
@@ -29,17 +31,18 @@ export function TitleInput({ value, onChange, placeholder }: { value: string; on
 /* ---------- client ---------- */
 
 /**
- * Client details. The dropdown picks a saved client (filling the fields) or
- * starts a new one (clearing them). Details typed here can be saved to, or
- * update, the Clients list. Documents keep their own copy of the details.
+ * Client details as a property list. The picker in the header chooses a saved
+ * client (filling the details) or starts a new one (clearing them). Details typed
+ * here can be saved to, or update, the Clients list. Documents keep their own copy.
  */
 export function ClientPanel({ client, onChange, title = "Client" }: { client: Party; onChange: (p: Party) => void; title?: string }) {
   const { ws, upsertClient } = useStore();
   const known = ws.clients.find((c) => c.name.trim() && c.name.trim().toLowerCase() === client.name.trim().toLowerCase());
   const keys: (keyof Party)[] = ["name", "contact", "email", "phone", "address", "abn"];
   const changed = known && keys.some((k) => known[k] !== client[k]);
-  const set = (k: keyof Party) => (e: { target: { value: string } }) => onChange({ ...client, [k]: e.target.value });
+  const set = (k: keyof Party) => (v: string) => onChange({ ...client, [k]: v });
   const clients = [...ws.clients].filter((c) => c.name.trim()).sort((a, b) => a.name.localeCompare(b.name));
+  const listId = useId();
 
   const pick = (id: string) => {
     const c = ws.clients.find((x) => x.id === id);
@@ -48,45 +51,85 @@ export function ClientPanel({ client, onChange, title = "Client" }: { client: Pa
       onChange(details);
     } else {
       onChange(emptyParty());
-      requestAnimationFrame(() => document.getElementById(nameId)?.focus());
+      requestAnimationFrame(() => document.getElementById(listId)?.querySelector("input")?.focus());
     }
   };
-  const nameId = useId();
 
   return (
     <Panel
       title={title}
       actions={
-        !known && client.name.trim() ? (
-          <Button variant="ghost" size="sm" icon="plus" onClick={() => upsertClient({ ...newClient(), ...client })}>
-            Save to clients
-          </Button>
-        ) : changed ? (
-          <Button variant="ghost" size="sm" icon="save" onClick={() => upsertClient({ ...known, ...client, id: known.id })}>
-            Update saved client
-          </Button>
-        ) : known ? (
-          <span className="text-xs text-ink-muted">Saved client</span>
-        ) : null
+        <>
+          {!known && client.name.trim() ? (
+            <Button variant="ghost" size="sm" icon="plus" onClick={() => upsertClient({ ...newClient(), ...client })}>
+              Save to clients
+            </Button>
+          ) : changed ? (
+            <Button variant="ghost" size="sm" icon="save" onClick={() => upsertClient({ ...known, ...client, id: known.id })}>
+              Update saved client
+            </Button>
+          ) : null}
+          {clients.length > 0 && (
+            <ClientPicker value={known?.id ?? ""} label={known?.name ?? "New client"} clients={clients} onPick={pick} />
+          )}
+        </>
       }
     >
-      <div className="grid grid-cols-1 gap-4 p-4 @lg:grid-cols-2">
-        <SelectField
-          label="Client"
-          className="@lg:col-span-2"
-          value={known?.id ?? ""}
-          onChange={pick}
-          hint={clients.length ? undefined : "No saved clients yet. Fill in the details, then Save to clients."}
-          options={[{ value: "", label: "New client" }, ...clients.map((c) => ({ value: c.id, label: c.name }))]}
-        />
-        <Field id={nameId} label="Name" value={client.name} placeholder="Business or person" onChange={set("name")} />
-        <Field label="Contact person" value={client.contact} onChange={set("contact")} />
-        <Field label="Email" type="email" value={client.email} onChange={set("email")} />
-        <Field label="Phone" value={client.phone} onChange={set("phone")} />
-        <AreaField label="Address" rows={1} value={client.address} onChange={set("address")} />
-        <Field label="ABN" hint="Optional. Shown on invoices." mono value={client.abn} onChange={set("abn")} />
+      <div id={listId}>
+        <PartyProperties party={client} set={set} contact abnHint="Add ABN, shown on invoices" />
       </div>
     </Panel>
+  );
+}
+
+/** A quiet header control that reads as the current client's name; a native select sits over it. */
+function ClientPicker({ value, label, clients, onPick }: { value: string; label: string; clients: { id: string; name: string }[]; onPick: (id: string) => void }) {
+  return (
+    <label className="relative inline-flex h-[26px] max-w-[220px] items-center gap-1 rounded-sm px-2 text-xs font-medium text-ink-muted hover:bg-surface-sunken hover:text-ink focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus">
+      <span className="truncate">{label}</span>
+      <Icon name="chevron-down" />
+      <select
+        aria-label="Choose a saved client"
+        value={value}
+        onChange={(e) => onPick(e.target.value)}
+        className="absolute inset-0 cursor-pointer appearance-none opacity-0"
+      >
+        <option value="">New client</option>
+        {clients.map((c) => (
+          <option key={c.id} value={c.id}>
+            {c.name}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+/** Name, contact, email, phone, address and ABN of a business or person, as a property list. */
+export function PartyProperties({
+  party,
+  set,
+  contact = false,
+  abnHint = "Add ABN",
+  autoFocus,
+}: {
+  party: Party;
+  set: (k: keyof Party) => (v: string) => void;
+  /** Show the contact person row (clients have one; your own details use Settings' name). */
+  contact?: boolean;
+  abnHint?: string;
+  /** Focus the name, e.g. for a client that was just added. */
+  autoFocus?: boolean;
+}) {
+  return (
+    <PropertyList>
+      <Property icon="building" label="Name" value={party.name} placeholder="Business or person" onChange={set("name")} autoFocus={autoFocus} />
+      {contact && <Property icon="user" label="Contact" value={party.contact} placeholder="Add contact person" onChange={set("contact")} />}
+      <Property icon="mail" label="Email" type="email" value={party.email} placeholder="Add email" onChange={set("email")} />
+      <Property icon="phone" label="Phone" value={party.phone} placeholder="Add phone" onChange={set("phone")} />
+      <Property icon="pin" label="Address" multiline value={party.address} placeholder="Add address" onChange={set("address")} />
+      <Property icon="hash" label="ABN" mono value={party.abn} placeholder={abnHint} onChange={set("abn")} />
+    </PropertyList>
   );
 }
 
@@ -94,7 +137,7 @@ export function ClientPanel({ client, onChange, title = "Client" }: { client: Pa
 
 export function FromPanel({ from, onChange }: { from: Party; onChange: (p: Party) => void }) {
   const { ws } = useStore();
-  const set = (k: keyof Party) => (e: { target: { value: string } }) => onChange({ ...from, [k]: e.target.value });
+  const set = (k: keyof Party) => (v: string) => onChange({ ...from, [k]: v });
   const b = ws.business;
   return (
     <details className="group rounded-md border border-line bg-surface">
@@ -102,13 +145,9 @@ export function FromPanel({ from, onChange }: { from: Party; onChange: (p: Party
         <span className="text-xs font-medium text-ink-muted">Your details on this document</span>
         <span className="truncate text-xs text-ink-muted group-open:hidden">{from.name || "Not set"}</span>
       </summary>
-      <div className="grid grid-cols-1 gap-4 border-t border-line p-4 @lg:grid-cols-2">
-        <Field label="Name" value={from.name} onChange={set("name")} />
-        <Field label="ABN" mono value={from.abn} onChange={set("abn")} />
-        <Field label="Email" value={from.email} onChange={set("email")} />
-        <Field label="Phone" value={from.phone} onChange={set("phone")} />
-        <AreaField label="Address" rows={1} value={from.address} onChange={set("address")} className="@lg:col-span-2" />
-        <div className="@lg:col-span-2">
+      <div className="border-t border-line">
+        <PartyProperties party={from} set={set} />
+        <div className="border-t border-line px-3 py-2">
           <Button
             variant="ghost"
             size="sm"

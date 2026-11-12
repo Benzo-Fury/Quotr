@@ -13,7 +13,8 @@ interface Frame {
   className?: string;
 }
 
-const affix = "flex items-center self-stretch bg-surface-sunken px-2 text-[13px] text-ink-muted";
+/** Units and currency symbols: faint text inside the field, no tab or divider. */
+const affix = "tnum flex items-center self-stretch px-3 text-[13px] text-ink-faint";
 const inputCls = "h-full min-w-0 flex-1 border-0 bg-transparent px-3 text-[13px] text-ink outline-none placeholder:text-ink-faint read-only:text-ink-muted";
 
 function FieldFrame({ id, label, hint, error, prefix, suffix, className, multiline, children }: Frame & { id: string; multiline?: boolean; children: ReactNode }) {
@@ -26,14 +27,15 @@ function FieldFrame({ id, label, hint, error, prefix, suffix, className, multili
       )}
       <div
         className={cx(
-          "flex overflow-hidden rounded-sm border bg-surface hover:border-ink focus-within:border-accent focus-within:shadow-[0_0_0_1px_var(--color-accent)]",
-          error ? "border-danger" : "border-control-border",
+          // Soft at rest: a faint well with a light edge. Hover steps up to the control grey; focus gets a fern edge and a soft halo.
+          "flex overflow-hidden rounded-sm border bg-surface-sunken transition-[border-color,background-color,box-shadow] duration-100 hover:border-control-border focus-within:border-accent focus-within:bg-surface focus-within:shadow-[0_0_0_3px_var(--color-accent-soft)]",
+          error ? "border-danger" : "border-line",
           multiline ? "items-stretch" : "h-control-h items-center",
         )}
       >
-        {prefix != null && <span className={cx(affix, "border-r border-line")}>{prefix}</span>}
+        {prefix != null && <span className={cx(affix, "pr-0")}>{prefix}</span>}
         {children}
-        {suffix != null && <span className={cx(affix, "border-l border-line")}>{suffix}</span>}
+        {suffix != null && <span className={cx(affix, "pl-0")}>{suffix}</span>}
       </div>
       {error ? (
         <p id={id + "-msg"} className="m-0 text-xs leading-4 text-danger">
@@ -62,7 +64,7 @@ export function Field({ label, hint, error, prefix, suffix, mono, className, id:
         aria-invalid={error ? true : undefined}
         aria-describedby={error || hint ? id + "-msg" : undefined}
         {...rest}
-        className={cx(inputCls, mono && "tnum")}
+        className={cx(inputCls, mono && "tnum", prefix != null && "pl-1.5", suffix != null && "pr-1.5")}
       />
     </FieldFrame>
   );
@@ -162,10 +164,14 @@ function fmt(n: number) {
   return Number.isFinite(n) ? String(n) : "0";
 }
 
+/** A borderless cell for dense rows: text at rest, a soft fill on hover, the fern ring on focus. */
+const cell =
+  "h-7 w-full min-w-0 rounded-sm border border-transparent bg-transparent text-xs text-ink outline-none transition-colors duration-100 hover:bg-surface-sunken focus:border-accent focus:bg-surface focus:shadow-[0_0_0_3px_var(--color-accent-soft)]";
+
 /**
- * A compact number box for dense rows (hours). The caption sits above it and
- * can be visually hidden per row; it always names the input for screen readers.
- * `value` may be null (empty), e.g. actual hours not logged yet.
+ * A compact number cell for dense rows (hours, quantities, percentages). The
+ * caption sits above it and can be visually hidden; it always names the input
+ * for screen readers. `value` may be null (empty), e.g. actual hours not logged yet.
  */
 export function MiniNumber({
   label,
@@ -173,6 +179,8 @@ export function MiniNumber({
   onValue,
   hideLabel,
   placeholder,
+  prefix,
+  suffix,
   className,
 }: {
   label: string;
@@ -181,6 +189,9 @@ export function MiniNumber({
   /** Classes for the caption, e.g. "@3xl:sr-only". */
   hideLabel?: string;
   placeholder?: string;
+  /** A faint unit before or after the number, like "$" or "%". */
+  prefix?: string;
+  suffix?: string;
   className?: string;
 }) {
   const id = useId();
@@ -191,8 +202,8 @@ export function MiniNumber({
     if (!focused.current) setDraft(show(value));
   }, [value]);
   return (
-    <div className={cx("grid min-w-0 gap-1", className)}>
-      <label htmlFor={id} className={cx("text-[11px] leading-[14px] text-ink-muted", hideLabel)}>
+    <div className={cx("relative grid min-w-0 gap-1", className)}>
+      <label htmlFor={id} className={cx("text-right text-[11px] leading-[14px] text-ink-muted", hideLabel)}>
         {label}
       </label>
       <input
@@ -215,13 +226,16 @@ export function MiniNumber({
           const n = Number(raw);
           if (Number.isFinite(n)) onValue(n);
         }}
-        className="tnum h-7 w-full min-w-0 rounded-sm border border-control-border bg-surface px-2 text-right text-xs text-ink outline-none placeholder:text-ink-faint hover:border-ink focus:border-accent focus:shadow-[0_0_0_1px_var(--color-accent)]"
+        style={{ paddingLeft: prefix ? `calc(8px + ${prefix.length + 0.5}ch)` : undefined, paddingRight: suffix ? `calc(8px + ${suffix.length + 0.5}ch)` : undefined }}
+        className={cx(cell, "tnum px-2 text-right placeholder:text-ink-faint")}
       />
+      {prefix && <span aria-hidden className="tnum pointer-events-none absolute bottom-0 left-2 flex h-7 items-center text-xs text-ink-faint">{prefix}</span>}
+      {suffix && <span aria-hidden className="tnum pointer-events-none absolute bottom-0 right-2 flex h-7 items-center text-xs text-ink-faint">{suffix}</span>}
     </div>
   );
 }
 
-/** A compact select matching MiniNumber. */
+/** A compact select cell matching MiniNumber, right aligned with no chevron. */
 export function MiniSelect<T extends string>({
   label,
   value,
@@ -242,17 +256,14 @@ export function MiniSelect<T extends string>({
   const id = useId();
   return (
     <div className={cx("grid min-w-0 gap-1", className)}>
-      <label htmlFor={id} className={cx("text-[11px] leading-[14px] text-ink-muted", hideLabel)}>
+      <label htmlFor={id} className={cx("text-right text-[11px] leading-[14px] text-ink-muted", hideLabel)}>
         {label}
       </label>
       <select
         id={id}
         value={value}
         onChange={(e) => onChange(e.target.value as T)}
-        className={cx(
-          "h-7 w-full min-w-0 cursor-pointer rounded-sm border border-control-border bg-surface px-1.5 text-xs outline-none hover:border-ink focus:border-accent focus:shadow-[0_0_0_1px_var(--color-accent)]",
-          selectClassName,
-        )}
+        className={cx(cell, "cursor-pointer appearance-none px-2 text-right [text-align-last:right]", selectClassName)}
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>

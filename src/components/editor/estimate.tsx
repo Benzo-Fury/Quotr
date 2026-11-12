@@ -125,21 +125,19 @@ export function StepEstimate({
   step: s,
   module: m,
   q,
-  first,
   onChange,
 }: {
   step: Step;
   module: Module;
   q: QuoteDoc;
-  /** The first row shows column captions on wide layouts; other rows hide them visually. */
-  first: boolean;
   onChange: (p: Partial<Step>) => void;
 }) {
   const e = q.estimating;
-  const hide = first ? undefined : "@3xl:sr-only";
+  // Wide layouts print the captions once, in StepColumnsHead
+  const hide = "@3xl:sr-only";
   const hours = quotedHours(s, e);
   return (
-    <div className="flex flex-wrap items-end gap-1.5 @3xl:flex-nowrap">
+    <div className="flex flex-wrap items-end gap-1.5 @3xl:flex-nowrap @3xl:items-start">
       <MiniNumber label="Best" value={s.best} onValue={(v) => onChange({ best: v ?? 0 })} hideLabel={hide} className="w-12" />
       <MiniNumber label="Likely" value={s.likely} onValue={(v) => onChange({ likely: v ?? 0 })} hideLabel={hide} className="w-12" />
       <MiniNumber label="Worst" value={s.worst} onValue={(v) => onChange({ worst: v ?? 0 })} hideLabel={hide} className="w-12" />
@@ -167,6 +165,22 @@ export function StepEstimate({
         placeholder="–"
         className="w-12"
       />
+    </div>
+  );
+}
+
+/** Column captions for the step cells, printed once above a module's steps on wide layouts. */
+export function StepColumnsHead() {
+  // Cells pad their numbers by 8px; Quoted is plain text, so its caption sits flush
+  const cap = "text-right text-[11px] leading-[14px] text-ink-muted";
+  return (
+    <div aria-hidden className="flex gap-1.5">
+      <span className={cx(cap, "w-12 pr-2")}>Best</span>
+      <span className={cx(cap, "w-12 pr-2")}>Likely</span>
+      <span className={cx(cap, "w-12 pr-2")}>Worst</span>
+      <span className={cx(cap, "w-[80px] pr-2")}>Risk</span>
+      <span className={cx(cap, "w-[80px]")}>Quoted</span>
+      <span className={cx(cap, "w-12 pr-2")}>Actual</span>
     </div>
   );
 }

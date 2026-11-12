@@ -130,6 +130,20 @@ const ICONS = {
     </>
   ),
   upload: <path d="M12 15V4M7.5 8.5 12 4l4.5 4.5M5 20h14" />,
+  user: (
+    <>
+      <circle cx={12} cy={8} r={3.5} />
+      <path d="M5 20c.8-3.5 3.6-5.5 7-5.5s6.2 2 7 5.5" />
+    </>
+  ),
+  hash: <path d="M9.5 4 7.5 20M16.5 4l-2 16M4.5 9h15M4 15h15" />,
+  globe: (
+    <>
+      <circle cx={12} cy={12} r={8.5} />
+      <path d="M3.5 12h17M12 3.5c2.4 2.6 3.5 5.4 3.5 8.5s-1.1 5.9-3.5 8.5c-2.4-2.6-3.5-5.4-3.5-8.5s1.1-5.9 3.5-8.5z" />
+    </>
+  ),
+  bank: <path d="M3.5 9.5 12 4.5l8.5 5M5.5 10v7M10 10v7M14 10v7M18.5 10v7M3.5 19.5h17" />,
 } satisfies Record<string, ReactElement>;
 
 export type IconName = keyof typeof ICONS;

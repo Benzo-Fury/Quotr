@@ -2,7 +2,8 @@ import { useState } from "react";
 import { TermsEditor } from "@/components/editor/shared";
 import { RowActions } from "@/components/editor/shared";
 import { Button } from "@/components/ui/Button";
-import { AreaField, Field, NumberField } from "@/components/ui/Field";
+import { Field, MiniNumber, NumberField } from "@/components/ui/Field";
+import { Property, PropertyList } from "@/components/ui/Property";
 import { ConfirmDialog, InlineInput, Panel, Switch } from "@/components/ui/misc";
 import { newStage, normalizeWorkspace } from "@/lib/factory";
 import { docNumber, todayISO } from "@/lib/format";
@@ -18,8 +19,8 @@ export function Settings({ toast }: { toast: (text: string, tone?: "danger") => 
   const b = ws.business;
   const [restore, setRestore] = useState<ReturnType<typeof normalizeWorkspace> | null>(null);
   const patch = (p: Partial<Business>) => setBusiness({ ...b, ...p });
-  const set = (k: keyof Business) => (e: { target: { value: string } }) => patch({ [k]: e.target.value } as Partial<Business>);
-  const setBank = (k: keyof Business["bank"]) => (e: { target: { value: string } }) => patch({ bank: { ...b.bank, [k]: e.target.value } });
+  const set = (k: keyof Business) => (v: string) => patch({ [k]: v } as Partial<Business>);
+  const setBank = (k: keyof Business["bank"]) => (v: string) => patch({ bank: { ...b.bank, [k]: v } });
   const pctSum = b.schedule.reduce((s, x) => s + x.pct, 0);
   const e = b.estimating;
   const setE = (k: keyof Business["estimating"]) => (v: number) => patch({ estimating: { ...e, [k]: v } });
@@ -50,26 +51,28 @@ export function Settings({ toast }: { toast: (text: string, tone?: "danger") => 
     <Page title="Settings">
       <p className="-mt-3 m-0 text-ink-muted">Your details and the defaults every new quote and invoice starts from. Changes save as you type.</p>
 
-      <Panel title="Your business">
-        <div className="grid gap-4 p-4 sm:grid-cols-2">
-          <Field label="Business or trading name" value={b.name} onChange={set("name")} placeholder="Shown as Prepared by and From" />
-          <Field label="Your name" hint="Optional. Shown under the business name." value={b.contact} onChange={set("contact")} />
-          <Field label="ABN" mono value={b.abn} onChange={set("abn")} />
-          <Field label="Email" type="email" value={b.email} onChange={set("email")} />
-          <Field label="Phone" value={b.phone} onChange={set("phone")} />
-          <Field label="Website" value={b.website} onChange={set("website")} />
-          <AreaField label="Address" rows={2} value={b.address} onChange={set("address")} className="sm:col-span-2" />
-        </div>
-      </Panel>
+      <div className="grid items-start gap-6 lg:grid-cols-2">
+        <Panel title="Your business">
+          <PropertyList>
+            <Property icon="building" label="Business name" value={b.name} placeholder="Shown as Prepared by and From" onChange={set("name")} />
+            <Property icon="user" label="Your name" value={b.contact} placeholder="Optional, shown under the name" onChange={set("contact")} />
+            <Property icon="hash" label="ABN" mono value={b.abn} placeholder="Add ABN" onChange={set("abn")} />
+            <Property icon="mail" label="Email" type="email" value={b.email} placeholder="Add email" onChange={set("email")} />
+            <Property icon="phone" label="Phone" value={b.phone} placeholder="Add phone" onChange={set("phone")} />
+            <Property icon="globe" label="Website" value={b.website} placeholder="Add website" onChange={set("website")} />
+            <Property icon="pin" label="Address" multiline value={b.address} placeholder="Add address" onChange={set("address")} />
+          </PropertyList>
+        </Panel>
 
-      <Panel title="Payment details">
-        <div className="grid gap-4 p-4 sm:grid-cols-2">
-          <Field label="Account name" value={b.bank.accountName} onChange={setBank("accountName")} />
-          <Field label="PayID" hint="Optional." value={b.bank.payId} onChange={setBank("payId")} />
-          <Field label="BSB" mono value={b.bank.bsb} onChange={setBank("bsb")} />
-          <Field label="Account number" mono value={b.bank.accountNumber} onChange={setBank("accountNumber")} />
-        </div>
-      </Panel>
+        <Panel title="Payment details">
+          <PropertyList>
+            <Property icon="user" label="Account name" value={b.bank.accountName} placeholder="Add account name" onChange={setBank("accountName")} />
+            <Property icon="bank" label="BSB" mono value={b.bank.bsb} placeholder="Add BSB" onChange={setBank("bsb")} />
+            <Property icon="hash" label="Account" mono value={b.bank.accountNumber} placeholder="Add account number" onChange={setBank("accountNumber")} />
+            <Property icon="send" label="PayID" value={b.bank.payId} placeholder="Optional" onChange={setBank("payId")} />
+          </PropertyList>
+        </Panel>
+      </div>
 
       <Panel title="Tax, currency and dates">
         <div className="grid gap-4 p-4 sm:grid-cols-2">
@@ -154,7 +157,7 @@ export function Settings({ toast }: { toast: (text: string, tone?: "danger") => 
         <ol className="m-0 list-none p-0">
           {b.schedule.map((s, i) => (
             <li key={s.id} className="group grid grid-cols-[88px_minmax(0,1fr)_auto] items-center gap-3 border-t border-line px-4 py-2 first:border-t-0">
-              <NumberField aria-label="Percent" suffix="%" value={s.pct} min={0} onValue={(pct) => patch({ schedule: patchById(b.schedule, s.id, { pct }) })} />
+              <MiniNumber label="Percent" hideLabel="sr-only" suffix="%" value={s.pct} onValue={(pct) => patch({ schedule: patchById(b.schedule, s.id, { pct: pct ?? 0 }) })} />
               <InlineInput
                 aria-label="When"
                 value={s.label}

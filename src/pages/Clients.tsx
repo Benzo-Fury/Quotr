@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { AreaField, Field } from "@/components/ui/Field";
+import { PartyProperties } from "@/components/editor/shared";
 import { Icon } from "@/components/ui/Icon";
 import { ConfirmDialog } from "@/components/ui/misc";
 import { newClient } from "@/lib/factory";
@@ -41,7 +41,7 @@ export function Clients() {
         <ul className="m-0 grid list-none gap-2 p-0">
           {clients.map((c) => {
             const open = openId === c.id;
-            const set = (k: keyof Party) => (e: { target: { value: string } }) => upsertClient({ ...c, [k]: e.target.value });
+            const set = (k: keyof Party) => (v: string) => upsertClient({ ...c, [k]: v });
             return (
               <li key={c.id} className="overflow-hidden rounded-md border border-line bg-surface">
                 <button
@@ -61,14 +61,9 @@ export function Clients() {
                   <Icon name="chevron-down" className={"text-ink-muted transition-transform " + (open ? "rotate-180" : "")} />
                 </button>
                 {open && (
-                  <div className="grid gap-4 border-t border-line p-4 sm:grid-cols-2">
-                    <Field label="Name" value={c.name} onChange={set("name")} autoFocus={!c.name} />
-                    <Field label="Contact person" value={c.contact} onChange={set("contact")} />
-                    <Field label="Email" type="email" value={c.email} onChange={set("email")} />
-                    <Field label="Phone" value={c.phone} onChange={set("phone")} />
-                    <AreaField label="Address" rows={1} value={c.address} onChange={set("address")} />
-                    <Field label="ABN" mono value={c.abn} onChange={set("abn")} />
-                    <div className="flex justify-end sm:col-span-2">
+                  <div className="border-t border-line">
+                    <PartyProperties party={c} set={set} contact autoFocus={!c.name} />
+                    <div className="flex justify-end border-t border-line px-4 py-2">
                       <Button variant="danger" size="sm" icon="trash" onClick={() => setConfirm(c)}>
                         Delete client
                       </Button>
