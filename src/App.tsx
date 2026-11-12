@@ -4,7 +4,8 @@ import { DocEditor } from "./components/editor/DocEditor";
 import { MobileNav, Nav, type Section } from "./components/Nav";
 import { Button } from "./components/ui/Button";
 import { Icon } from "./components/ui/Icon";
-import { ConfirmDialog, Toasts, type Toast } from "./components/ui/misc";
+import { ConfirmDialog } from "./components/ui/misc";
+import { Island, type Toast } from "./components/ui/Island";
 import { createInvoice, createQuote, duplicateDoc, fromBusiness, invoiceFromQuote } from "./lib/factory";
 import { backend } from "./lib/desktop";
 import { exportDocFile, exportDocPdf, folderName, parse, pickDocFile, readDocFile, FILE_EXT } from "./lib/file";
@@ -40,7 +41,7 @@ export function App() {
 }
 
 function Shell() {
-  const { ws, update, upsertDoc, deleteDoc, storageError } = useStore();
+  const { ws, update, upsertDoc, deleteDoc, storageError, saveState } = useStore();
   const [route, setRoute] = useState<Route>(readRoute);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [confirm, setConfirm] = useState<Doc | null>(null);
@@ -338,7 +339,7 @@ function Shell() {
         />
       )}
 
-      <Toasts toasts={toasts} />
+      <Island toasts={toasts} saveState={saveState} />
     </>
   );
 }

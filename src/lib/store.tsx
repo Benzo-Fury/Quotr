@@ -17,7 +17,11 @@ interface Store {
   upsertClient: (c: Client) => void;
   deleteClient: (id: string) => void;
   storageError: boolean;
+  /** Auto-save progress, for the status toast: "saving" while a write is pending, "saved" once it lands. */
+  saveState: SaveState;
 }
+
+export type SaveState = "idle" | "saving" | "saved";
 
 const Ctx = createContext<Store | null>(null);
 
@@ -46,6 +50,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 function LoadedProvider({ initial, children }: { initial: Workspace; children: ReactNode }) {
   const [ws, setWs] = useState<Workspace>(initial);
   const [storageError, setStorageError] = useState(false);
+  const [saveState, setSaveState] = useState<SaveState>("idle");
   // What's on disk already matches the first state, so skip that save.
   const first = useRef(true);
 
@@ -54,11 +59,18 @@ function LoadedProvider({ initial, children }: { initial: Workspace; children: R
       first.current = false;
       return;
     }
+    setSaveState("saving");
     const t = setTimeout(() => {
       backend
         .saveWorkspace({ workspace: ws })
-        .then(() => setStorageError(false))
-        .catch(() => setStorageError(true));
+        .then(() => {
+          setStorageError(false);
+          setSaveState("saved");
+        })
+        .catch(() => {
+          setStorageError(true);
+          setSaveState("idle");
+        });
     }, 250);
     return () => clearTimeout(t);
   }, [ws]);
@@ -70,6 +82,7 @@ function LoadedProvider({ initial, children }: { initial: Workspace; children: R
       ws,
       update,
       storageError,
+      saveState,
       upsertDoc: (doc, business) =>
         setWs((w) => {
           const stamped = { ...doc, updatedAt: new Date().toISOString() };
@@ -89,7 +102,7 @@ function LoadedProvider({ initial, children }: { initial: Workspace; children: R
         })),
       deleteClient: (id) => setWs((w) => ({ ...w, clients: w.clients.filter((c) => c.id !== id) })),
     }),
-    [ws, update, storageError],
+    [ws, update, storageError, saveState],
   );
 
   return <Ctx.Provider value={store}>{children}</Ctx.Provider>;

@@ -266,33 +266,6 @@ export function SectionHead({ title, children }: { title: string; children?: Rea
   );
 }
 
-/* ---------- Toasts ---------- */
-
-export interface Toast {
-  id: number;
-  text: string;
-  tone?: "default" | "danger";
-}
-
-export function Toasts({ toasts }: { toasts: Toast[] }) {
-  return (
-    <div aria-live="polite" className="pointer-events-none fixed bottom-4 left-1/2 z-50 grid -translate-x-1/2 gap-2">
-      {toasts.map((t) => (
-        <div
-          key={t.id}
-          className={cx(
-            "flex items-center gap-2 rounded-md px-3 py-2 text-[13px] shadow-pop",
-            t.tone === "danger" ? "bg-danger text-on-accent" : "bg-ink text-surface",
-          )}
-        >
-          {t.tone !== "danger" && <Icon name="check" />}
-          {t.text}
-        </div>
-      ))}
-    </div>
-  );
-}
-
 /* ---------- Confirm dialog ---------- */
 
 export function ConfirmDialog({
