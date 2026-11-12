@@ -138,7 +138,6 @@ export function InvoiceForm({ doc, onChange }: { doc: InvoiceDoc; onChange: (d: 
                 <Property icon="send" label="PayID" value={pay.payId} placeholder="Optional" onChange={setPay("payId")} />
               </>
             )}
-            <Property icon="receipt" label="Reference" mono value={pay.reference} placeholder="Add reference" onChange={setPay("reference")} />
           </PropertyList>
         </Panel>
         <div className="grid gap-4">

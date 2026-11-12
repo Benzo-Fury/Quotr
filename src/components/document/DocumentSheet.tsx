@@ -391,31 +391,30 @@ function paymentView(d: InvoiceDoc) {
   const name = p.accountName.trim();
   const type = p.accountType.trim();
   const address = p.bankAddress.trim();
-  const reference = (p.reference || d.number).trim();
   if (!name && !numbers.length && !address) return null;
-  return { name, type, numbers, address, reference };
+  return { name, type, numbers, address };
 }
 
 function PaymentBlock({ pay }: { pay: NonNullable<ReturnType<typeof paymentView>> }) {
-  const label = "block text-[10.5px] leading-[14px] text-ink-muted";
-  const side = pay.reference || pay.address;
+  const label = "mb-1 block text-[10.5px] leading-[14px] text-ink-muted";
+  const hint = "mt-1 block text-[10px] leading-[13px] text-ink-muted";
   return (
-    <div className="flex gap-8 rounded-sm bg-surface-sunken px-4 py-3.5">
+    <div className="flex gap-10 rounded-sm bg-surface-sunken px-5 py-4">
       <div className="min-w-0 flex-1">
         {pay.name && (
-          <div className={cx(pay.numbers.length > 0 && "mb-2.5")}>
+          <div className={cx(pay.numbers.length > 0 && "mb-4")}>
             <span className={label}>Account name</span>
             <span className="block text-[13px] font-medium leading-5">{pay.name}</span>
-            {pay.type && <span className="block text-[10.5px] leading-[14px] text-ink-muted">{pay.type} account</span>}
+            {pay.type && <span className={hint}>{pay.type} account</span>}
           </div>
         )}
         {pay.numbers.length > 0 && (
           <dl className="m-0 border-t border-line">
             {pay.numbers.map((r) => (
-              <div key={r.label} className="flex items-baseline justify-between gap-4 border-b border-line py-1.5 last:border-b-0 last:pb-0">
+              <div key={r.label} className="flex items-baseline justify-between gap-6 border-b border-line py-3 last:border-b-0 last:pb-0">
                 <dt className="min-w-0">
                   <span className="block leading-[18px]">{r.label}</span>
-                  {r.hint && <span className="block text-[10px] leading-[13px] text-ink-muted">{r.hint}</span>}
+                  {r.hint && <span className={hint}>{r.hint}</span>}
                 </dt>
                 <dd className="tnum m-0 shrink-0 whitespace-nowrap font-medium leading-[18px]">{r.value}</dd>
               </div>
@@ -423,21 +422,10 @@ function PaymentBlock({ pay }: { pay: NonNullable<ReturnType<typeof paymentView>
           </dl>
         )}
       </div>
-      {side && (
-        <div className="w-[13rem] shrink-0 space-y-3 border-l border-line pl-6">
-          {pay.reference && (
-            <div>
-              <span className={label}>Reference</span>
-              <span className="tnum block font-medium leading-[18px]">{pay.reference}</span>
-              <span className="block text-[10px] leading-[13px] text-ink-muted">Include this with your payment</span>
-            </div>
-          )}
-          {pay.address && (
-            <div>
-              <span className={label}>Bank address</span>
-              <span className="block whitespace-pre-line leading-[18px]">{formatAddress(pay.address)}</span>
-            </div>
-          )}
+      {pay.address && (
+        <div className="w-[13rem] shrink-0 border-l border-line pl-8">
+          <span className={label}>Bank address</span>
+          <span className="block whitespace-pre-line leading-5">{formatAddress(pay.address)}</span>
         </div>
       )}
     </div>
