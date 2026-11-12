@@ -64,4 +64,4 @@ These follow the 2.0.6 templates and docs.
 
 - **Signing:** needs an Apple Developer ID, with credentials in environment variables. Until then, other Macs will warn when opening the app.
 - **Auto-update:** needs `release.baseUrl`, where the update files are hosted.
-- **Chrome dependency:** PDFs need Google Chrome installed. Without it, Download PDF shows a message saying so.
+- **Chrome dependency:** PDFs need Google Chrome installed. Without it, Export PDF shows a message saying so.

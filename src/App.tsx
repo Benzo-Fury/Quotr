@@ -154,7 +154,7 @@ function Shell() {
     setPrinting(d.id);
     try {
       const r = await exportDocPdf(d);
-      if (r) toast(`Saved the PDF to ${folderName(r.folder)}`);
+      if (r) toast(`Exported the PDF to ${folderName(r.folder)}`);
     } catch (e) {
       toast((e as Error).message, "danger");
     } finally {

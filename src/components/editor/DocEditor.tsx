@@ -129,12 +129,12 @@ export function DocEditor({ doc, printing, ...a }: { doc: Doc; printing: boolean
           onClick={a.onPrint}
           disabled={printing}
           aria-busy={printing}
-          aria-label="Download PDF"
-          title="Save the document as an A4 PDF (⌘P)"
+          aria-label="Export PDF"
+          title="Export the document as an A4 PDF (⌘P)"
           className="w-control-h px-0 @md:w-auto @md:px-3"
           labelClassName="hidden @md:inline"
         >
-          <span className="hidden @2xl:inline">Download </span>PDF
+          <span className="hidden @2xl:inline">Export </span>PDF
         </Button>
         <Menu label="More actions" items={more} />
       </div>
