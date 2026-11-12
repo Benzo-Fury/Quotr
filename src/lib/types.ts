@@ -11,9 +11,17 @@ export interface Party {
 
 export interface BankDetails {
   accountName: string;
-  bsb: string;
   accountNumber: string;
+  /** Australian accounts. */
+  bsb: string;
   payId: string;
+  /** US accounts. */
+  accountType: string;
+  /** ABA routing number, for ACH and domestic wires. */
+  routingNumber: string;
+  /** SWIFT/BIC, for payments sent from outside the US. */
+  swift: string;
+  bankAddress: string;
 }
 
 /** Your business profile and the defaults new documents start from. */
@@ -23,6 +31,8 @@ export interface Business extends Party {
   gstRegistered: boolean;
   gstRate: number;
   bank: BankDetails;
+  /** US account for American clients. */
+  bankUs: BankDetails;
   quoteValidDays: number;
   invoiceDueDays: number;
   nextQuoteNumber: number;

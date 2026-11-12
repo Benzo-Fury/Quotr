@@ -21,6 +21,7 @@ export function Settings({ toast }: { toast: (text: string, tone?: "danger") => 
   const patch = (p: Partial<Business>) => setBusiness({ ...b, ...p });
   const set = (k: keyof Business) => (v: string) => patch({ [k]: v } as Partial<Business>);
   const setBank = (k: keyof Business["bank"]) => (v: string) => patch({ bank: { ...b.bank, [k]: v } });
+  const setBankUs = (k: keyof Business["bankUs"]) => (v: string) => patch({ bankUs: { ...b.bankUs, [k]: v } });
   const pctSum = b.schedule.reduce((s, x) => s + x.pct, 0);
   const e = b.estimating;
   const setE = (k: keyof Business["estimating"]) => (v: number) => patch({ estimating: { ...e, [k]: v } });
@@ -64,12 +65,23 @@ export function Settings({ toast }: { toast: (text: string, tone?: "danger") => 
           </PropertyList>
         </Panel>
 
-        <Panel title="Payment details">
+        <Panel title="Australian payment details">
           <PropertyList>
             <Property icon="user" label="Account name" value={b.bank.accountName} placeholder="Add account name" onChange={setBank("accountName")} />
             <Property icon="bank" label="BSB" mono value={b.bank.bsb} placeholder="Add BSB" onChange={setBank("bsb")} />
             <Property icon="hash" label="Account" mono value={b.bank.accountNumber} placeholder="Add account number" onChange={setBank("accountNumber")} />
             <Property icon="send" label="PayID" value={b.bank.payId} placeholder="Optional" onChange={setBank("payId")} />
+          </PropertyList>
+        </Panel>
+
+        <Panel title="US payment details">
+          <PropertyList>
+            <Property icon="user" label="Account name" value={b.bankUs.accountName} placeholder="Add account name" onChange={setBankUs("accountName")} />
+            <Property icon="file" label="Account type" value={b.bankUs.accountType} placeholder="Checking, Savings or Deposit" onChange={setBankUs("accountType")} />
+            <Property icon="bank" label="Routing" mono value={b.bankUs.routingNumber} placeholder="For ACH and wire" onChange={setBankUs("routingNumber")} />
+            <Property icon="hash" label="Account" mono value={b.bankUs.accountNumber} placeholder="Add account number" onChange={setBankUs("accountNumber")} />
+            <Property icon="globe" label="SWIFT/BIC" mono value={b.bankUs.swift} placeholder="For payments from outside the US" onChange={setBankUs("swift")} />
+            <Property icon="pin" label="Bank address" multiline value={b.bankUs.bankAddress} placeholder="Add bank address" onChange={setBankUs("bankAddress")} />
           </PropertyList>
         </Panel>
       </div>

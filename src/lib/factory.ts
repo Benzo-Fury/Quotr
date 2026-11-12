@@ -21,7 +21,18 @@ import type {
 /* ---------- empty shapes ---------- */
 
 export const emptyParty = (): Party => ({ name: "", contact: "", email: "", phone: "", address: "", abn: "" });
-export const emptyBank = (): BankDetails => ({ accountName: "", bsb: "", accountNumber: "", payId: "" });
+export const emptyBank = (): BankDetails => ({
+  accountName: "",
+  accountNumber: "",
+  bsb: "",
+  payId: "",
+  accountType: "",
+  routingNumber: "",
+  swift: "",
+  bankAddress: "",
+});
+/** True when payment details are for a US account. */
+export const isUsBank = (b: BankDetails) => !!(b.routingNumber.trim() || b.swift.trim() || b.accountType.trim() || b.bankAddress.trim());
 export const newStep = (name = "", note = ""): Step => ({ id: uid(), name, note, best: 0, likely: 0, worst: 0, risk: "med", actual: null });
 export const newModule = (): Module => ({
   id: uid(),
@@ -53,6 +64,7 @@ export function defaultBusiness(): Business {
     gstRegistered: false,
     gstRate: 10,
     bank: emptyBank(),
+    bankUs: emptyBank(),
     quoteValidDays: 30,
     invoiceDueDays: 7,
     nextQuoteNumber: 1,
@@ -223,7 +235,16 @@ function party(v: unknown): Party {
 
 function bank(v: unknown): BankDetails {
   const o = obj(v);
-  return { accountName: str(o.accountName), bsb: str(o.bsb), accountNumber: str(o.accountNumber), payId: str(o.payId) };
+  return {
+    accountName: str(o.accountName),
+    accountNumber: str(o.accountNumber),
+    bsb: str(o.bsb),
+    payId: str(o.payId),
+    accountType: str(o.accountType),
+    routingNumber: str(o.routingNumber),
+    swift: str(o.swift),
+    bankAddress: str(o.bankAddress),
+  };
 }
 
 function fx(v: unknown): Fx | null {
@@ -349,6 +370,7 @@ export function normalizeWorkspace(v: unknown): Workspace {
     gstRegistered: b.gstRegistered === true,
     gstRate: num(b.gstRate, d.gstRate),
     bank: bank(b.bank),
+    bankUs: bank(b.bankUs),
     quoteValidDays: num(b.quoteValidDays, d.quoteValidDays),
     invoiceDueDays: num(b.invoiceDueDays, d.invoiceDueDays),
     nextQuoteNumber: Math.max(1, num(b.nextQuoteNumber, 1)),

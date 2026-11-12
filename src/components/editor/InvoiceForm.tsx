@@ -1,4 +1,4 @@
-import { newLine } from "@/lib/factory";
+import { isUsBank, newLine } from "@/lib/factory";
 import { formatMoney } from "@/lib/format";
 import { insertAfter, moveItem, patchById, removeById } from "@/lib/list";
 import { useStore } from "@/lib/store";
@@ -16,6 +16,9 @@ export function InvoiceForm({ doc, onChange }: { doc: InvoiceDoc; onChange: (d: 
   const pay = doc.payment;
   const setPay = (k: keyof InvoiceDoc["payment"]) => (v: string) => patch({ payment: { ...pay, [k]: v } });
   const total = docTotals(doc).total;
+  const us = isUsBank(pay);
+  const useAccount = (account: typeof ws.business.bank) =>
+    patch({ payment: { ...account, accountName: account.accountName || ws.business.name, reference: pay.reference || doc.number } });
 
   return (
     <>
@@ -108,20 +111,33 @@ export function InvoiceForm({ doc, onChange }: { doc: InvoiceDoc; onChange: (d: 
         <Panel
           title="How to pay"
           actions={
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => patch({ payment: { ...ws.business.bank, accountName: ws.business.bank.accountName || ws.business.name, reference: pay.reference || doc.number } })}
-            >
-              Use Settings
-            </Button>
+            <>
+              <Button variant="ghost" size="sm" onClick={() => useAccount(ws.business.bank)}>
+                Use AU account
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => useAccount(ws.business.bankUs)}>
+                Use US account
+              </Button>
+            </>
           }
         >
           <PropertyList>
             <Property icon="user" label="Account name" value={pay.accountName} placeholder="Add account name" onChange={setPay("accountName")} />
-            <Property icon="bank" label="BSB" mono value={pay.bsb} placeholder="Add BSB" onChange={setPay("bsb")} />
-            <Property icon="hash" label="Account" mono value={pay.accountNumber} placeholder="Add account number" onChange={setPay("accountNumber")} />
-            <Property icon="send" label="PayID" value={pay.payId} placeholder="Optional" onChange={setPay("payId")} />
+            {us ? (
+              <>
+                <Property icon="file" label="Account type" value={pay.accountType} placeholder="Add account type" onChange={setPay("accountType")} />
+                <Property icon="bank" label="Routing" mono value={pay.routingNumber} placeholder="For ACH and wire" onChange={setPay("routingNumber")} />
+                <Property icon="hash" label="Account" mono value={pay.accountNumber} placeholder="Add account number" onChange={setPay("accountNumber")} />
+                <Property icon="globe" label="SWIFT/BIC" mono value={pay.swift} placeholder="Add SWIFT/BIC" onChange={setPay("swift")} />
+                <Property icon="pin" label="Bank address" multiline value={pay.bankAddress} placeholder="Add bank address" onChange={setPay("bankAddress")} />
+              </>
+            ) : (
+              <>
+                <Property icon="bank" label="BSB" mono value={pay.bsb} placeholder="Add BSB" onChange={setPay("bsb")} />
+                <Property icon="hash" label="Account" mono value={pay.accountNumber} placeholder="Add account number" onChange={setPay("accountNumber")} />
+                <Property icon="send" label="PayID" value={pay.payId} placeholder="Optional" onChange={setPay("payId")} />
+              </>
+            )}
             <Property icon="receipt" label="Reference" mono value={pay.reference} placeholder="Add reference" onChange={setPay("reference")} />
           </PropertyList>
         </Panel>

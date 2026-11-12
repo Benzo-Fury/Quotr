@@ -39,7 +39,7 @@ function Head({ kind, number, title }: { kind: string; number: string; title: st
         {kind}
         <span className="tnum font-normal normal-case tracking-normal text-ink-muted">{number}</span>
       </span>
-      <h1 className="mt-2.5 mb-0 max-w-[20ch] text-[30px] font-semibold leading-[34px] tracking-[-0.03em] [text-wrap:balance]">
+      <h1 className="mt-2.5 mb-0 max-w-[32ch] text-[30px] font-semibold leading-[34px] tracking-[-0.03em] [text-wrap:balance]">
         {title || <span className="text-ink-faint">Untitled</span>}
       </h1>
     </>
@@ -375,18 +375,92 @@ function Closing({ d, total }: { d: QuoteDoc; total: number }) {
 
 /* ---------- invoice ---------- */
 
+type PayRow = { label: string; hint?: string; value: string };
+
+/** Splits payment details into who to pay, the numbers to enter, and the extras. */
+function paymentView(d: InvoiceDoc) {
+  const p = d.payment;
+  const keep = (rows: PayRow[]) => rows.filter((r) => r.value.trim());
+  const numbers = keep([
+    { label: "BSB", value: p.bsb },
+    { label: "Routing", hint: "ACH and wire, from the US", value: p.routingNumber },
+    { label: "Account", value: p.accountNumber },
+    { label: "SWIFT/BIC", hint: "From outside the US", value: p.swift },
+    { label: "PayID", value: p.payId },
+  ]);
+  const name = p.accountName.trim();
+  const type = p.accountType.trim();
+  const address = p.bankAddress.trim();
+  const reference = (p.reference || d.number).trim();
+  if (!name && !numbers.length && !address) return null;
+  return { name, type, numbers, address, reference };
+}
+
+function PaymentBlock({ pay }: { pay: NonNullable<ReturnType<typeof paymentView>> }) {
+  const label = "block text-[10.5px] leading-[14px] text-ink-muted";
+  const side = pay.reference || pay.address;
+  return (
+    <div className="flex gap-8 rounded-sm bg-surface-sunken px-4 py-3.5">
+      <div className="min-w-0 flex-1">
+        {pay.name && (
+          <div className={cx(pay.numbers.length > 0 && "mb-2.5")}>
+            <span className={label}>Account name</span>
+            <span className="block text-[13px] font-medium leading-5">{pay.name}</span>
+            {pay.type && <span className="block text-[10.5px] leading-[14px] text-ink-muted">{pay.type} account</span>}
+          </div>
+        )}
+        {pay.numbers.length > 0 && (
+          <dl className="m-0 border-t border-line">
+            {pay.numbers.map((r) => (
+              <div key={r.label} className="flex items-baseline justify-between gap-4 border-b border-line py-1.5 last:border-b-0 last:pb-0">
+                <dt className="min-w-0">
+                  <span className="block leading-[18px]">{r.label}</span>
+                  {r.hint && <span className="block text-[10px] leading-[13px] text-ink-muted">{r.hint}</span>}
+                </dt>
+                <dd className="tnum m-0 shrink-0 whitespace-nowrap font-medium leading-[18px]">{r.value}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
+      </div>
+      {side && (
+        <div className="w-[13rem] shrink-0 space-y-3 border-l border-line pl-6">
+          {pay.reference && (
+            <div>
+              <span className={label}>Reference</span>
+              <span className="tnum block font-medium leading-[18px]">{pay.reference}</span>
+              <span className="block text-[10px] leading-[13px] text-ink-muted">Include this with your payment</span>
+            </div>
+          )}
+          {pay.address && (
+            <div>
+              <span className={label}>Bank address</span>
+              <span className="block whitespace-pre-line leading-[18px]">{formatAddress(pay.address)}</span>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Puts a one-line address on separate lines: street, city and region, country. */
+function formatAddress(a: string) {
+  if (a.includes("\n")) return a;
+  const parts = a.split(/,\s*/).filter(Boolean);
+  if (parts.length < 4) return a;
+  const country = parts.pop()!;
+  const name = parts.shift()!;
+  const street = parts.shift()!;
+  return [name, street, parts.join(", "), country].join("\n");
+}
+
 function InvoiceBody({ d }: { d: InvoiceDoc }) {
   const t = docTotals(d);
   const lines = d.lines.filter((l) => l.name.trim() || l.rate);
   const detailed = lines.some((l) => l.qty !== 1);
   const p = d.payment;
-  const pay = [
-    { label: "Account name", value: p.accountName },
-    { label: "BSB", value: p.bsb },
-    { label: "Account", value: p.accountNumber },
-    { label: "PayID", value: p.payId },
-    { label: "Reference", value: p.reference || d.number },
-  ].filter((x) => x.value.trim());
+  const pay = paymentView(d);
   const th = "pb-1.5 text-left text-[10.5px] font-medium text-ink-muted";
   const td = "border-t border-line py-[7px] align-top";
   return (
@@ -434,16 +508,9 @@ function InvoiceBody({ d }: { d: InvoiceDoc }) {
         <p className="mt-2 mb-0 text-[11px] leading-4 text-ink-muted">{gstNote(d)}</p>
       </Section>
 
-      {pay.length > 0 && (
+      {pay && (
         <Section title="How to pay" className="doc-avoid-break">
-          <dl className="m-0 grid gap-3 rounded-sm bg-surface-sunken px-3.5 py-3" style={{ gridTemplateColumns: `repeat(${Math.min(pay.length, 5)}, minmax(0, 1fr))` }}>
-            {pay.map((x) => (
-              <div key={x.label} className="min-w-0">
-                <dt className="text-[10.5px] text-ink-muted">{x.label}</dt>
-                <dd className="tnum m-0 mt-0.5 break-words font-medium">{x.value}</dd>
-              </div>
-            ))}
-          </dl>
+          <PaymentBlock pay={pay} />
         </Section>
       )}
 
